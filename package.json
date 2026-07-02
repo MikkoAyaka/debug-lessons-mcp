@@ -3,11 +3,20 @@
   "version": "1.0.0",
   "description": "MCP server for shared debugging case library across Claude Code projects",
   "type": "module",
+  "bin": {
+    "debug-lessons-mcp": "./dist/cli.js"
+  },
   "main": "dist/index.js",
+  "files": [
+    "dist/",
+    "skills/",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js"
+    "dev": "tsc && node dist/index.js",
+    "prepare": "npm run build"
   },
   "keywords": ["mcp", "debug", "lessons", "claude-code"],
   "license": "MIT",

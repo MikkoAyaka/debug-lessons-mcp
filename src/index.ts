@@ -388,13 +388,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // ---- Start ----
 
-async function main() {
+export async function startServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Debug Lessons MCP server running on stdio");
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+// Auto-start when run directly (node dist/index.js), skip when imported
+const isDirectRun =
+  process.argv[1] &&
+  (import.meta.url === `file://${process.argv[1]}` ||
+    import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}` ||
+    import.meta.url.endsWith(`/${process.argv[1].replace(/\\/g, "/").split("/").pop()}`));
+
+if (isDirectRun) {
+  startServer().catch((err) => {
+    console.error("Fatal error:", err);
+    process.exit(1);
+  });
+}

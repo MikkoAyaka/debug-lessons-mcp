@@ -1,4 +1,51 @@
 import { getDb, listCases } from "./db.js";
+import { homedir } from "node:os";
+import path from "node:path";
+
+/**
+ * Get the user's home directory in a cross-platform way.
+ */
+export function getHomeDir(): string {
+  return process.env.HOME || process.env.USERPROFILE || homedir();
+}
+
+/**
+ * Resolve a path that may start with ~ to an absolute path.
+ */
+export function resolveHome(filepath: string): string {
+  if (filepath.startsWith("~")) {
+    return path.join(getHomeDir(), filepath.slice(1));
+  }
+  return filepath;
+}
+
+/**
+ * Get the Claude Code config directory (~/.claude).
+ */
+export function getClaudeDir(): string {
+  return path.join(getHomeDir(), ".claude");
+}
+
+/**
+ * Get the path to mcp.json.
+ */
+export function getMcpConfigPath(): string {
+  return path.join(getClaudeDir(), "mcp.json");
+}
+
+/**
+ * Get the path to the Claude Code skills directory.
+ */
+export function getSkillsDir(): string {
+  return path.join(getClaudeDir(), "skills");
+}
+
+/**
+ * Get the default data directory for the shared database.
+ */
+export function getDefaultDataDir(): string {
+  return path.join(getClaudeDir(), "debug-lessons-mcp", "data");
+}
 
 /**
  * Detect the current project ID from available sources.
