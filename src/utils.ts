@@ -4,8 +4,9 @@ import { getDb, listCases } from "./db.js";
  * Detect the current project ID from available sources.
  * Priority:
  * 1. Explicit project_id parameter (handled in tool call)
- * 2. CLAUDE_PROJECT_DIR / PROJECT_DIR env var — extract dir name as project_id
- * 3. PWD / cwd path matching against known project_path values in DB
+ * 2. PROJECT_ID env var — direct project identifier (most reliable)
+ * 3. CLAUDE_PROJECT_DIR / PROJECT_DIR env var — extract dir name as project_id
+ * 4. PWD / cwd path matching
  */
 export function detectCurrentProject(explicitProjectId?: string): {
   project_id: string;
@@ -17,16 +18,20 @@ export function detectCurrentProject(explicitProjectId?: string): {
     return { project_id: explicitProjectId, project_path: "", source: "explicit" };
   }
 
-  // 2. Environment variables
+  // 2. Direct PROJECT_ID env var
+  if (process.env.PROJECT_ID) {
+    return { project_id: process.env.PROJECT_ID, project_path: process.env.CLAUDE_PROJECT_DIR || "", source: "env" };
+  }
+
+  // 3. Path-based env vars — extract dir name as project_id
   const projectDir = process.env.CLAUDE_PROJECT_DIR || process.env.PROJECT_DIR || process.env.PWD || "";
   if (projectDir) {
-    // Extract the last directory name as project_id
     const normalized = projectDir.replace(/\\/g, "/");
     const dirName = normalized.split("/").filter(Boolean).pop() || normalized;
     return { project_id: dirName, project_path: normalized, source: "env" };
   }
 
-  // 3. Fallback — no detection possible
+  // 4. Fallback — no detection possible
   return { project_id: "", project_path: "", source: "fallback" };
 }
 
