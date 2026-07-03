@@ -27,10 +27,18 @@ export function getClaudeDir(): string {
 }
 
 /**
- * Get the path to mcp.json.
+ * Get the path to mcp.json (legacy), now redirects to claude.json.
+ * @deprecated Use getClaudeJsonPath() instead.
  */
 export function getMcpConfigPath(): string {
-  return path.join(getClaudeDir(), "mcp.json");
+  return getClaudeJsonPath();
+}
+
+/**
+ * Get the path to the Claude Code global config (~/.claude.json).
+ */
+export function getClaudeJsonPath(): string {
+  return path.join(getHomeDir(), ".claude.json");
 }
 
 /**

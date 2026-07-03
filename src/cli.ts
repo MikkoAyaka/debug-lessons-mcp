@@ -97,14 +97,16 @@ function writeMcpConfig(config: { mcpServers?: Record<string, unknown> }) {
   return configPath;
 }
 
-function buildServerEntry() {
+function buildServerEntry(extraEnv?: Record<string, string>) {
   const home = getHomeDir();
   const dbPath = path.join(home, ".claude", "debug-lessons-mcp", "data", "debug-lessons.db");
-  return {
-    command: "debug-lessons-mcp",
-    args: [],
-    env: { DB_PATH: dbPath },
-  };
+  const env: Record<string, string> = { DB_PATH: dbPath, ...(extraEnv || {}) };
+
+  const isWindows = process.platform === "win32";
+  if (isWindows) {
+    return { command: "cmd", args: ["/c", "debug-lessons-mcp"], env };
+  }
+  return { command: "debug-lessons-mcp", args: [], env };
 }
 
 async function runSetup() {
@@ -167,13 +169,7 @@ function runInit(targetDir?: string) {
 
   if (!config.mcpServers) config.mcpServers = {};
 
-  const home = getHomeDir();
-  const dbPath = path.join(home, ".claude", "debug-lessons-mcp", "data", "debug-lessons.db");
-  config.mcpServers["debug-lessons"] = {
-    command: "debug-lessons-mcp",
-    args: [],
-    env: { PROJECT_ID: projectName, DB_PATH: dbPath },
-  };
+  config.mcpServers["debug-lessons"] = buildServerEntry({ PROJECT_ID: projectName });
 
   fs.writeFileSync(projectMcpPath, JSON.stringify(config, null, 2) + "\n", "utf-8");
   console.log("✅ .claude/mcp.json 已创建（PROJECT_ID: " + projectName + "）");
