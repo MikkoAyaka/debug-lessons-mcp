@@ -5,33 +5,67 @@
 ## 快速开始
 
 ```bash
-npm install -g debug-lessons-mcp
-debug-lessons-mcp setup
+npm install -g debug-lessons-mcp   # 步骤 1：全局安装
+debug-lessons-mcp setup            # 步骤 2：全局配置（mcp.json + skills + 数据目录）
 ```
 
-重启 Claude Code 后即可在任意项目中使用配套 slash commands。
+重启 Claude Code。然后在**每个项目**中执行一次：
+
+```
+/初始化踩坑
+```
+
+这会自动创建项目级 `.claude/mcp.json`（带正确的 `PROJECT_ID` 和 `model_id`），并安装配套 skills 到项目中以启用指令补全。
 
 ## 配套指令
 
-安装后，在 Claude Code 中直接输入以下指令：
-
 | 指令 | 说明 | 用法示例 |
 |------|------|----------|
+| `/初始化踩坑` | **新项目初始化**：自动配置项目级 mcp.json 并安装 skills | `/初始化踩坑` |
 | `/记录踩坑` | 引导式记录一条新的踩坑案例 | `/记录踩坑 Docker 构建时 gocache 写入失败` |
 | `/搜索踩坑` | 全文搜索案例库，当前项目加权优先 | `/搜索踩坑 Docker 端口 冲突` |
 | `/踩坑统计` | 查看统计：总数、模型/分类/项目分布、近 7/30 天趋势 | `/踩坑统计` |
 | `/浏览踩坑` | 按项目、分类或模型筛选浏览 | `/浏览踩坑 sparx 项目的 Docker 案例` |
 
+> **为什么需要 `/初始化踩坑`？** 全局配置让 MCP Server 在所有项目中可用，但没有指定 `PROJECT_ID`。初始化步骤会在项目内创建 `.claude/mcp.json`，写入当前项目的标识和模型信息，确保记录案例时归属正确。同时将 skills 安装到 `.claude/skills/` 以启用指令补全。
+
+## 两级配置机制
+
+| 级别 | 文件 | 作用 |
+|------|------|------|
+| **全局** | `~/.claude/mcp.json` | 告诉 Claude Code 如何启动 MCP Server（所有项目共用，`setup` 命令自动写入） |
+| **项目** | `.claude/mcp.json` | 覆盖 `PROJECT_ID` 和 `model_id`（`/初始化踩坑` 自动创建） |
+
+项目级配置会与全局配置合并——只覆盖 `debug-lessons` 条目的 `env`，不影响其他 MCP 服务器。
+
 ## 项目自动检测
 
-添加案例时，服务端自动识别当前项目，无需手动指定 `project_id`。检测优先级：
+添加案例时 `project_id` 的检测优先级：
 
 1. 调用时显式传入的 `project_id`
 2. `PROJECT_ID` 环境变量（最可靠，推荐在 `mcp.json` 中配置）
 3. `CLAUDE_PROJECT_DIR` / `PWD` 环境变量（提取目录名）
 4. fallback 为 `"unknown"`
 
-如果需要为某个项目指定固定标识，在 `mcp.json` 中添加 `PROJECT_ID`：
+推荐使用 `/初始化踩坑` 自动完成项目级配置。如需手动控制：
+
+**全局** `~/.claude/mcp.json`（`setup` 自动写入）：
+
+```json
+{
+  "mcpServers": {
+    "debug-lessons": {
+      "command": "debug-lessons-mcp",
+      "args": [],
+      "env": {
+        "DB_PATH": "~/.claude/debug-lessons-mcp/data/debug-lessons.db"
+      }
+    }
+  }
+}
+```
+
+**项目级** `.claude/mcp.json`（`/初始化踩坑` 自动创建、覆盖 PROJECT_ID）：
 
 ```json
 {

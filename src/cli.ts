@@ -94,7 +94,7 @@ function buildServerEntry() {
 }
 
 async function runSetup() {
-  console.log("Configuring debug-lessons MCP service...\n");
+  console.log("🔧 Configuring debug-lessons MCP service...\n");
 
   const { config, existed } = readMcpConfig();
   const serverEntry = buildServerEntry();
@@ -105,22 +105,28 @@ async function runSetup() {
   config.mcpServers["debug-lessons"] = serverEntry;
 
   const configPath = writeMcpConfig(config);
-  const action = existed ? "updated" : "created";
-  console.log("mcp.json " + action + " (debug-lessons entry)");
+  const action = existed ? "已更新" : "已创建";
+  console.log(`✅ 全局 mcp.json ${action}（"debug-lessons" 条目）`);
 
   const dataDir = getDefaultDataDir();
   fs.mkdirSync(dataDir, { recursive: true });
-  console.log("Data dir: " + dataDir);
+  console.log(`📊 数据库目录: ${dataDir}`);
 
   console.log("");
   await runInstallSkills();
 
   const dbPath = path.join(dataDir, "debug-lessons.db");
   console.log("");
-  console.log("Setup complete! Restart Claude Code and use /record-lesson to start.");
+  console.log("🎉 全局配置完成！");
   console.log("");
-  console.log("  mcp.json: " + configPath);
-  console.log("  Database: " + dbPath);
+  console.log("   mcp.json: " + configPath);
+  console.log("   数据库:   " + dbPath);
+  console.log("");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("📋 下一步：在每个项目中运行 /初始化踩坑");
+  console.log("   这会创建项目级 .claude/mcp.json，");
+  console.log("   自动配置 PROJECT_ID 并安装配套 skills。");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 }
 
 async function runInstallSkills() {

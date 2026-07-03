@@ -4,7 +4,7 @@
   "description": "MCP server for shared debugging case library across Claude Code projects",
   "type": "module",
   "bin": {
-    "debug-lessons-mcp": "./dist/cli.js"
+    "debug-lessons-mcp": "dist/cli.js"
   },
   "main": "dist/index.js",
   "files": [
@@ -18,7 +18,12 @@
     "dev": "tsc && node dist/index.js",
     "prepare": "npm run build"
   },
-  "keywords": ["mcp", "debug", "lessons", "claude-code"],
+  "keywords": [
+    "mcp",
+    "debug",
+    "lessons",
+    "claude-code"
+  ],
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
