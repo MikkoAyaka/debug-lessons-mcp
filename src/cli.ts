@@ -21,7 +21,8 @@ debug-lessons-mcp — 跨项目共享的踩坑案例 MCP 服务
 
 命令:
   (无参数)          启动 MCP Server (stdio 模式)，供 Claude Code 调用
-  setup             自动配置 Claude Code（mcp.json + 安装配套 skills）
+  setup             全局配置（mcp.json + skills + 数据目录），每台机器执行一次
+  init [项目路径]    项目初始化（创建 .claude/mcp.json + 安装 skills），每个项目执行一次
   install-skills    仅安装/更新配套 slash commands 到 ~/.claude/skills/
   --help, -h        显示此帮助
   --version, -v     显示版本号
@@ -123,11 +124,85 @@ async function runSetup() {
   console.log("   数据库:   " + dbPath);
   console.log("");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("📋 下一步：在每个项目中运行 /init-lessons（/初始化踩坑）");
+  console.log("📋 下一步：在每个项目中运行 debug-lessons-mcp init");
   console.log("   这会创建项目级 .claude/mcp.json，");
   console.log("   自动配置 PROJECT_ID 并安装配套 skills。");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 }
+
+// ---- Init Command ----
+
+function runInit(targetDir?: string) {
+  const projectRoot = targetDir ? path.resolve(targetDir) : process.cwd();
+  const projectName = projectRoot.replace(/\\/g, "/").split("/").filter(Boolean).pop() || "unknown";
+  const claudeDir = path.join(projectRoot, ".claude");
+  const projectMcpPath = path.join(claudeDir, "mcp.json");
+  const projectSkillsDir = path.join(claudeDir, "skills");
+
+  console.log("🔧 正在初始化项目: " + projectRoot);
+  console.log("   项目标识: " + projectName + "\n");
+
+  // 1. Create .claude/mcp.json
+  fs.mkdirSync(claudeDir, { recursive: true });
+
+  let config: { mcpServers?: Record<string, unknown> } = {};
+  if (fs.existsSync(projectMcpPath)) {
+    try {
+      config = JSON.parse(fs.readFileSync(projectMcpPath, "utf-8"));
+    } catch { /* ignore, will overwrite */ }
+  }
+
+  if (!config.mcpServers) config.mcpServers = {};
+
+  const home = getHomeDir();
+  const dbPath = path.join(home, ".claude", "debug-lessons-mcp", "data", "debug-lessons.db");
+  config.mcpServers["debug-lessons"] = {
+    command: "debug-lessons-mcp",
+    args: [],
+    env: { PROJECT_ID: projectName, DB_PATH: dbPath },
+  };
+
+  fs.writeFileSync(projectMcpPath, JSON.stringify(config, null, 2) + "\n", "utf-8");
+  console.log("✅ .claude/mcp.json 已创建（PROJECT_ID: " + projectName + "）");
+
+  // 2. Copy skills from npm package to project
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const pkgRoot = path.resolve(__dirname, "..");
+  const skillsSrc = path.join(pkgRoot, "skills");
+  fs.mkdirSync(projectSkillsDir, { recursive: true });
+
+  let copied = 0;
+  if (fs.existsSync(skillsSrc)) {
+    for (const entry of fs.readdirSync(skillsSrc)) {
+      if (entry.endsWith(".md")) {
+        fs.copyFileSync(path.join(skillsSrc, entry), path.join(projectSkillsDir, entry));
+        copied++;
+      }
+    }
+  }
+  console.log("✅ 配套 skills 已安装到 .claude/skills/（" + copied + " 个）");
+
+  // 3. Ensure .claude/ in gitignore
+  const gitignorePath = path.join(projectRoot, ".gitignore");
+  let gitignore = "";
+  if (fs.existsSync(gitignorePath)) {
+    gitignore = fs.readFileSync(gitignorePath, "utf-8");
+  }
+  if (!gitignore.includes(".claude/")) {
+    const updated = gitignore ? gitignore.trimEnd() + "\n.claude/\n" : ".claude/\n";
+    fs.writeFileSync(gitignorePath, updated, "utf-8");
+    console.log("✅ .claude/ 已加入 .gitignore");
+  }
+
+  console.log("");
+  console.log("🎉 初始化完成！重启 Claude Code 后即可使用：");
+  console.log("   /record-lesson  — 记录踩坑案例");
+  console.log("   /search-lessons — 搜索案例库");
+  console.log("   /lesson-stats   — 查看统计");
+  console.log("   /browse-lessons — 浏览案例列表");
+}
+
+// ---- Install-Skills Command ----
 
 async function runInstallSkills() {
   try {
@@ -153,6 +228,9 @@ async function main() {
       break;
     case "setup":
       await runSetup();
+      break;
+    case "init":
+      runInit(process.argv[3]);
       break;
     case "install-skills":
       await runInstallSkills();

@@ -11,11 +11,14 @@ debug-lessons-mcp setup            # 步骤 2：全局配置（mcp.json + skills
 
 重启 Claude Code。然后在**每个项目**中执行一次：
 
-```
-/init-lessons
+```bash
+cd 项目路径
+debug-lessons-mcp init
 ```
 
-这会自动创建项目级 `.claude/mcp.json`（带正确的 `PROJECT_ID` 和 `model_id`），并安装配套 skills 到项目中以启用指令补全。
+这会自动创建 `.claude/mcp.json`（带正确的 `PROJECT_ID`）并安装配套 skills 到 `.claude/skills/`。
+
+> 也可以指定路径：`debug-lessons-mcp init D:\AICraft`
 
 ## 配套指令
 
