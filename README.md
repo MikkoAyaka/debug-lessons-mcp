@@ -165,12 +165,17 @@ npm run build
 ## 更新与卸载
 
 ```bash
-# 更新到最新版本
-npm update -g debug-lessons-mcp
+# 日常更新（通常这样就够了）
+npm install -g debug-lessons-mcp@latest
 
-# 卸载
+# 如果 release notes 提到 skill 有变化，刷新全局 skills
+debug-lessons-mcp install-skills
+
+# 彻底卸载
 npm uninstall -g debug-lessons-mcp
-# 手动从 ~/.claude/mcp.json 中删除 "debug-lessons" 条目
-# 手动删除 ~/.claude/skills/ 下的 记录踩坑.md 等 4 个文件
-# 数据库文件 ~/.claude/debug-lessons-mcp/data/ 需手动删除（如需彻底清理）
+# 从 ~/.claude.json 的 mcpServers 中删除 "debug-lessons" 条目
+# 删除 ~/.claude/skills/ 下的 record-lesson 等目录
+# 数据库 ~/.claude/debug-lessons-mcp/data/ 手动删除（如需清理）
 ```
+
+> **不用每次更新都跑 `setup` 和 `init`。** `setup` 是装机一次性操作，`init` 是项目一次性操作。日常只需 `npm install -g ...@latest` 更新二进制。skill 有变化时 release notes 会说明，此时跑一次 `install-skills` 即可。
