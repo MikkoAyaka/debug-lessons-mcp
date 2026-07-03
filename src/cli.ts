@@ -50,10 +50,13 @@ function installSkills() {
 
   for (const entry of entries) {
     if (entry.endsWith(".md")) {
+      const skillName = entry.replace(/\.md$/, "");
       const src = path.join(skillsSrc, entry);
-      const dest = path.join(skillsDest, entry);
+      const skillDir = path.join(skillsDest, skillName);
+      const dest = path.join(skillDir, "SKILL.md");
+      fs.mkdirSync(skillDir, { recursive: true });
       fs.copyFileSync(src, dest);
-      installed.push(entry);
+      installed.push(skillName);
     }
   }
 
@@ -175,7 +178,11 @@ function runInit(targetDir?: string) {
   if (fs.existsSync(skillsSrc)) {
     for (const entry of fs.readdirSync(skillsSrc)) {
       if (entry.endsWith(".md")) {
-        fs.copyFileSync(path.join(skillsSrc, entry), path.join(projectSkillsDir, entry));
+        const skillName = entry.replace(/\.md$/, "");
+        const skillDir = path.join(projectSkillsDir, skillName);
+        const dest = path.join(skillDir, "SKILL.md");
+        fs.mkdirSync(skillDir, { recursive: true });
+        fs.copyFileSync(path.join(skillsSrc, entry), dest);
         copied++;
       }
     }
@@ -209,8 +216,7 @@ async function runInstallSkills() {
     const { installed, targetDir } = installSkills();
     console.log("Skills installed (" + installed.length + " slash commands)");
     for (const name of installed) {
-      const cmdName = name.replace(/\.md$/, "");
-      console.log("  - /" + cmdName);
+      console.log("  - /" + name);
     }
     console.log("  Location: " + targetDir);
   } catch (err: any) {
