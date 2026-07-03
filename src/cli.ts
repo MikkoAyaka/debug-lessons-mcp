@@ -10,7 +10,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PKG_VERSION = "1.0.0";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PKG_ROOT = path.resolve(__dirname, "..");
+
+function getVersion(): string {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(PKG_ROOT, "package.json"), "utf-8"));
+    return pkg.version || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
 
 function printHelp() {
   console.log(`
@@ -243,7 +253,7 @@ async function main() {
       break;
     case "--version":
     case "-v":
-      console.log("debug-lessons-mcp v" + PKG_VERSION);
+      console.log("debug-lessons-mcp v" + getVersion());
       break;
     case "--help":
     case "-h":
