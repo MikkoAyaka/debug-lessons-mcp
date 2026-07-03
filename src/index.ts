@@ -18,7 +18,7 @@ import {
   getModels,
   migrateFromJson,
 } from "./db.js";
-import { detectCurrentProject, truncate } from "./utils.js";
+import { detectCurrentProject, detectCurrentModel, truncate } from "./utils.js";
 
 // ---- Server Setup ----
 
@@ -79,13 +79,12 @@ const tools: Tool[] = [
   {
     name: "add_case",
     description:
-      "新增一条踩坑案例。project_id 不传则自动检测当前项目。model_id 必填，用于后续按模型统计。",
+      "新增一条踩坑案例。project_id 和 model_id 均自动检测，无需手动传入。",
     inputSchema: {
       type: "object",
       properties: {
         project_id: { type: "string", description: "项目标识（可选，不传则自动检测）" },
-        model_id: { type: "string", description: "模型标识，如 claude-opus-4-8、deepseek-v4-pro" },
-        model_name: { type: "string", description: "模型显示名称（可选）" },
+        model_id: { type: "string", description: "模型标识（可选，不传则从 ANTHROPIC_MODEL 环境变量自动检测）" },
         category: { type: "string", description: "分类，如 Docker/Build、Frontend、Database/Schema" },
         problem: { type: "string", description: "问题描述 — 发生了什么？" },
         thinking: { type: "string", description: "排查思路 — 当时怎么分析的？" },
@@ -93,7 +92,7 @@ const tools: Tool[] = [
         lesson: { type: "string", description: "教训总结 — 未来如何避免？（可操作、可直接套用）" },
         tags: { type: "string", description: "逗号分隔的标签（可选）" },
       },
-      required: ["model_id", "category", "problem", "thinking", "result", "lesson"],
+      required: ["category", "problem", "thinking", "result", "lesson"],
     },
   },
   {
@@ -105,7 +104,6 @@ const tools: Tool[] = [
         id: { type: "number", description: "案例 ID" },
         project_id: { type: "string", description: "项目标识" },
         model_id: { type: "string", description: "模型标识" },
-        model_name: { type: "string", description: "模型显示名称" },
         category: { type: "string", description: "分类" },
         problem: { type: "string", description: "问题描述" },
         thinking: { type: "string", description: "排查思路" },
@@ -238,7 +236,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const text = [
           `══════ 案例 #${c.id} ══════`,
           `项目:     ${c.project_id}`,
-          `模型:     ${c.model_id}${c.model_name ? ` (${c.model_name})` : ""}`,
+          `模型:     ${c.model_id}`,
           `分类:     ${c.category}`,
           `标签:     ${c.tags || "（无）"}`,
           `创建:     ${c.created_at}`,
@@ -262,12 +260,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "add_case": {
         const project = detectCurrentProject((args as any).project_id);
+        const modelId = (args as any).model_id || detectCurrentModel();
         const input = args as any;
         const id = insertCase({
           project_id: project.project_id || input.project_id || "unknown",
           project_path: project.project_path || "",
-          model_id: input.model_id,
-          model_name: input.model_name || "",
+          model_id: modelId,
           category: input.category,
           problem: input.problem,
           thinking: input.thinking,
@@ -280,7 +278,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: "text",
-              text: `✅ 案例已添加，ID: ${id}\n项目: ${project.project_id || input.project_id || "unknown"}\n模型: ${input.model_id}\n分类: ${input.category}`,
+              text: `✅ 案例已添加，ID: ${id}\n项目: ${project.project_id || input.project_id || "unknown"}\n模型: ${modelId}\n分类: ${input.category}`,
             },
           ],
         };
@@ -343,7 +341,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const lines = models.map(
-          (m) => `  ${m.model_id}${m.model_name ? ` (${m.model_name})` : ""} — ${m.count} 条案例`
+          (m) => `  ${m.model_id} — ${m.count} 条案例`
         );
 
         return {

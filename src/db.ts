@@ -38,7 +38,6 @@ function initSchema(db: Database.Database) {
       project_id TEXT NOT NULL,
       project_path TEXT NOT NULL DEFAULT '',
       model_id TEXT NOT NULL,
-      model_name TEXT NOT NULL DEFAULT '',
       category TEXT NOT NULL,
       problem TEXT NOT NULL,
       thinking TEXT NOT NULL DEFAULT '',
@@ -55,6 +54,12 @@ function initSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_cases_created ON cases(created_at);
     CREATE INDEX IF NOT EXISTS idx_cases_tags ON cases(tags);
   `);
+
+  // Migrate: drop model_name column if left over from v1.x
+  const cols = db.pragma("table_info(cases)") as { name: string }[];
+  if (cols.some((c) => c.name === "model_name")) {
+    db.exec("ALTER TABLE cases DROP COLUMN model_name");
+  }
 }
 
 // ---- Types ----
@@ -64,7 +69,6 @@ export interface DebugCase {
   project_id: string;
   project_path: string;
   model_id: string;
-  model_name: string;
   category: string;
   problem: string;
   thinking: string;
@@ -78,8 +82,7 @@ export interface DebugCase {
 export interface CaseInput {
   project_id?: string;
   project_path?: string;
-  model_id: string;
-  model_name?: string;
+  model_id?: string;
   category: string;
   problem: string;
   thinking: string;
@@ -114,14 +117,13 @@ export interface StatsResult {
 export function insertCase(input: CaseInput): number {
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT INTO cases (project_id, project_path, model_id, model_name, category, problem, thinking, result, lesson, tags)
-    VALUES (@project_id, @project_path, @model_id, @model_name, @category, @problem, @thinking, @result, @lesson, @tags)
+    INSERT INTO cases (project_id, project_path, model_id, category, problem, thinking, result, lesson, tags)
+    VALUES (@project_id, @project_path, @model_id, @category, @problem, @thinking, @result, @lesson, @tags)
   `);
   const result = stmt.run({
     project_id: input.project_id || "unknown",
     project_path: input.project_path || "",
-    model_id: input.model_id,
-    model_name: input.model_name || "",
+    model_id: input.model_id || "unknown",
     category: input.category,
     problem: input.problem,
     thinking: input.thinking,
@@ -265,9 +267,9 @@ export function getStats(project_id?: string): StatsResult {
 
   const byModel = db
     .prepare(
-      `SELECT model_id, model_name, COUNT(*) as count FROM cases ${whereProject} GROUP BY model_id ORDER BY count DESC`
+      `SELECT model_id, COUNT(*) as count FROM cases ${whereProject} GROUP BY model_id ORDER BY count DESC`
     )
-    .all(...params) as { model_id: string; model_name: string; count: number }[];
+    .all(...params) as { model_id: string; count: number }[];
 
   const byCategory = db
     .prepare(
@@ -294,18 +296,18 @@ export function getStats(project_id?: string): StatsResult {
   return {
     total,
     by_project: Object.fromEntries(byProject.map((r) => [r.project_id, r.count])),
-    by_model: Object.fromEntries(byModel.map((r) => [`${r.model_id}${r.model_name ? ` (${r.model_name})` : ""}`, r.count])),
+    by_model: Object.fromEntries(byModel.map((r) => [r.model_id, r.count])),
     by_category: Object.fromEntries(byCategory.map((r) => [r.category, r.count])),
     recent_30d: recent30d,
     recent_7d: recent7d,
   };
 }
 
-export function getModels(): { model_id: string; model_name: string; count: number }[] {
+export function getModels(): { model_id: string; count: number }[] {
   const db = getDb();
   return db
-    .prepare("SELECT model_id, model_name, COUNT(*) as count FROM cases GROUP BY model_id, model_name ORDER BY count DESC")
-    .all() as { model_id: string; model_name: string; count: number }[];
+    .prepare("SELECT model_id, COUNT(*) as count FROM cases GROUP BY model_id ORDER BY count DESC")
+    .all() as { model_id: string; count: number }[];
 }
 
 // ---- Migration ----

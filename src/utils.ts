@@ -91,6 +91,16 @@ export function detectCurrentProject(explicitProjectId?: string): {
 }
 
 /**
+ * Detect the current AI model from environment.
+ * Reads ANTHROPIC_MODEL set by Claude Code, strips decorations like [1m].
+ */
+export function detectCurrentModel(): string {
+  const raw = process.env.ANTHROPIC_MODEL || "";
+  // Strip token-budget annotations like "[1m]", "[8m]", etc.
+  return raw.replace(/\[\d+m\]/g, "").trim();
+}
+
+/**
  * Truncate a string to n characters, adding "..." if truncated.
  */
 export function truncate(s: string, n: number): string {

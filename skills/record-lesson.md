@@ -66,8 +66,7 @@ argument-hint: "[问题简述 | 文档路径 | 留空自动总结]"
 
 - 案例用中文记录
 - 教训具体可操作，不说「下次注意」
-- `model_id` / `model_name` 从系统提示 "powered by the model" 中提取当前模型
-- 不询问用户模型信息——自己找
+- `model_id` 无需传入——服务端自动检测
 - `project_id` 不传（服务端自动检测）
 - `category` 从问题领域推断
 
