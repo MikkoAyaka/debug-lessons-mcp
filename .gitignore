@@ -5,3 +5,4 @@ data/*.db
 *.d.ts
 .DS_Store
 .npmrc
+data/debug-lessons.db*
