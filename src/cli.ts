@@ -123,7 +123,7 @@ async function runSetup() {
   console.log("   数据库:   " + dbPath);
   console.log("");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("📋 下一步：在每个项目中运行 /初始化踩坑");
+  console.log("📋 下一步：在每个项目中运行 /init-lessons（/初始化踩坑）");
   console.log("   这会创建项目级 .claude/mcp.json，");
   console.log("   自动配置 PROJECT_ID 并安装配套 skills。");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
