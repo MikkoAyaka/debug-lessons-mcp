@@ -30,9 +30,10 @@ That's it. Use `/record-lesson` to record a case, `/search-lessons` to search.
 | `/search-lessons` | `/搜索踩坑` | Search cases by keywords; auto-triggers on errors |
 | `/lesson-stats` | `/踩坑统计` | Statistics: by project, model, category, and recent trends |
 | `/browse-lessons` | `/浏览踩坑` | Browse cases filtered by project, category, or model |
-| `/init-lessons` | `/初始化踩坑` | Initialize a new project (guided alternative to `debug-lessons-mcp init`) |
 
 > **Ambient triggers:** `search-lessons` activates on build failures, exceptions, and Docker/DB errors. `record-lesson` suggests recording when bugs are fixed after multiple attempts.
+>
+> **Project setup:** use `debug-lessons-mcp init`, not a slash command. It's faster and deterministic.
 
 ---
 
