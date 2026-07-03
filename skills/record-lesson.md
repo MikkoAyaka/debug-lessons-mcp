@@ -1,29 +1,69 @@
 ---
 name: record-lesson
-description: 记录一条调试踩坑案例到共享知识库。引导式收集问题、排查思路、解决方案和教训总结。Alias: /记录踩坑
-argument-hint: "[brief description of the issue]"
+description: 记录调试踩坑案例。支持交互式录入和文件批量导入。Alias: /记录踩坑
+argument-hint: "[问题简述 或 文档路径]"
 ---
 
 # Record Lesson / 记录踩坑
 
-将当前调试经验记录到共享踩坑案例库。
+将调试经验记录到共享案例库。支持两种模式：
 
-## 流程
+- **快速记录**：`/record-lesson Docker 构建失败...` — 一句话描述，AI 引导补全
+- **批量导入**：`/record-lesson docs/pitfalls.md` — 传入文件路径，一次性全部导入
 
-1. 如果用户提供了问题简述，以此作为起点。否则先问：「遇到了什么问题？」
-2. 逐项收集信息。如果用户一次性描述了完整经历，直接提取并确认：
-   - **问题描述** (problem) — 发生了什么？具体的错误信息或异常行为
-   - **排查思路** (thinking) — 当时怎么分析的？试过哪些方法？
-   - **解决方案** (result) — 最终怎么修好的？
-   - **教训总结** (lesson) — 未来如何避免？要具体可操作
-   - **分类** (category) — 从描述推断。常见：Docker/Build, Frontend, Backend/API, Database/Schema, Config/Env, CI/CD, Tooling, Testing, Performance, Security
-   - **标签** (tags) — 可选，逗号分隔关键词
-3. 确定模型信息：
-   - **model_id** — 从当前会话上下文中获取。查找系统提示中 "You are powered by the model" 后的模型标识。例如看到 `deepseek-v4-pro` 就用 `deepseek-v4-pro`，看到 `claude-opus-4-8` 就用 `claude-opus-4-8`
-   - **model_name** — 模型的显示名称。例如 `DeepSeek V4 Pro`、`Claude Opus 4.8`
-4. 调用 `add_case` MCP tool 提交案例。project_id 由服务端自动检测，model_id 和 model_name 必须显式传入。
-5. 显示保存结果（案例 ID 和摘要）。
+---
 
-## 注意
+## 模式 A：快速记录（用户提供的是问题描述，不是文件路径）
+
+1. 用户提供问题简述 → 直接提取关键信息，不要逐项询问
+2. 如果用户一次性描述了完整经历（问题+排查+方案+教训），**不要再次确认**，直接调用 `add_case`
+3. 只有信息确实不完整时，才用最少的提问补全缺失字段
+4. 分类从描述中自动推断，标签可选
+
+**核心原则：少问多干。用户给多少信息就用多少，差什么补问什么，不要逐项确认。**
+
+调用 `add_case` 时必须传入：
+- `model_id` — 从当前会话上下文获取（系统提示中 "You are powered by the model" 后的标识）
+- `model_name` — 对应的显示名称
+- `category` / `problem` / `thinking` / `result` / `lesson` — 从用户输入中提取
+- project_id 不传（服务端自动检测）
+
+---
+
+## 模式 B：批量导入（参数是有效的文件路径）
+
+当参数是现有文件路径（如 `.md`、`.json`、`.txt`）时，这是批量迁移任务：
+
+### 步骤
+
+1. **读取整个文件**，用 `Read` tool 一次性加载全部内容
+2. **解析所有案例条目**，识别每个独立的问题-排查-方案-教训单元
+3. **连续导入**，对每个条目调用一次 `add_case`。**不要每导入一条就问"还要继续吗？"**——直接全部导完
+4. **汇报汇总**，列出所有导入的案例 ID 和总数
+
+### 关键规则
+
+- **不问"要继续吗"** — 用户传入文件就是希望一次性全部迁移
+- **不逐条确认内容** — 文件中已有的内容直接原样导入
+- **保留原始措辞** — 不要改写文件中的 problem/thinking/result/lesson，除非有明显格式错误
+- **推断分类和标签** — 从内容中自动提取 category 和 tags
+
+### 汇报格式
+
+导入完成后打印简洁汇总：
+
+```
+✅ 导入完成：共 N 条
+  [ID] 分类 — 问题摘要
+  [ID] 分类 — 问题摘要
+  ...
+```
+
+---
+
+## 通用规则
+
 - 案例内容使用中文
 - 教训要具体可操作，不要说「下次注意」
+- model_id 必须从系统提示的 "powered by the model" 中获取当前模型标识
+- 不要询问用户 model_id 是什么——自己从上下文中找
