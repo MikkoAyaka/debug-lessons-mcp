@@ -18,8 +18,11 @@ argument-hint: "[brief description of the issue]"
    - **教训总结** (lesson) — 未来如何避免？要具体可操作
    - **分类** (category) — 从描述推断。常见：Docker/Build, Frontend, Backend/API, Database/Schema, Config/Env, CI/CD, Tooling, Testing, Performance, Security
    - **标签** (tags) — 可选，逗号分隔关键词
-3. 调用 `add_case` MCP tool 提交案例。project_id 和 model_id 由服务端自动检测。
-4. 显示保存结果（案例 ID 和摘要）。
+3. 确定模型信息：
+   - **model_id** — 从当前会话上下文中获取。查找系统提示中 "You are powered by the model" 后的模型标识。例如看到 `deepseek-v4-pro` 就用 `deepseek-v4-pro`，看到 `claude-opus-4-8` 就用 `claude-opus-4-8`
+   - **model_name** — 模型的显示名称。例如 `DeepSeek V4 Pro`、`Claude Opus 4.8`
+4. 调用 `add_case` MCP tool 提交案例。project_id 由服务端自动检测，model_id 和 model_name 必须显式传入。
+5. 显示保存结果（案例 ID 和摘要）。
 
 ## 注意
 - 案例内容使用中文
